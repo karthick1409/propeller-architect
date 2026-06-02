@@ -79,6 +79,22 @@ yes please proceed step3
 
 ---
 
+### PROMPT-004 — 2026-06-02 — High level architecture (Cursor)
+
+**Source:** User (Architect)  
+**Tool:** Cursor Agent  
+**Intent:** Proceed to Step 4 per `Expectations.txt` after test case documentation.
+
+**Full prompt:**
+
+```
+yes, please proceed High level architecture
+```
+
+**Outcome:** Created `Corporate_Learning_System_High_Level_Architecture.md` — modular monolith (Spring Boot + PostgreSQL + React), C4 context/container diagrams, three-plane model, stack rationale, alternatives (monolith vs microservices, PostgreSQL vs MongoDB), NFRs, dev/test/deploy, CI/CD/CT pipeline, Docker Compose deployment, rule versioning, rubric self-check (High Level Architecture — 10 marks).
+
+---
+
 ## Reusable architect prompt library
 
 Use these as copy-paste prompts. Tag format: `[JUDGE: <section> — <criterion>]`.
@@ -559,6 +575,7 @@ From `Corporate_Learning_System_problem_statement.md`:
 | 2026-06-02 | Initial log: PROMPT-001 + reusable library (TPL A–L) |
 | 2026-06-02 | PROMPT-002: Use case documentation deliverable |
 | 2026-06-02 | PROMPT-003: Test case documentation deliverable |
+| 2026-06-02 | PROMPT-004: High level architecture deliverable |
 
 ---
 
