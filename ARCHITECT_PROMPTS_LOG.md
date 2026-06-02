@@ -47,6 +47,38 @@ I am participating in Tehnothon challenge and my role is Architect. Here is the 
 
 ---
 
+### PROMPT-002 — 2026-06-02 — Use case documentation (Cursor)
+
+**Source:** User (Architect)  
+**Tool:** Cursor Agent  
+**Intent:** Proceed to Step 2 per `Expectations.txt` after problem statement analysis.
+
+**Full prompt:**
+
+```
+Ok we have problem statement analysis document. Now please proceed next step as per Expectations.
+```
+
+**Outcome:** Created `Corporate_Learning_System_Use_Case_Documentation.md` — 26 use cases, 5 user flows, 3 sequence diagrams, RBAC matrix, must-have traceability, rubric self-check (Use Case Documentation — 10 marks).
+
+---
+
+### PROMPT-003 — 2026-06-02 — Test case documentation (Cursor)
+
+**Source:** User (Architect)  
+**Tool:** Cursor Agent  
+**Intent:** Proceed to Step 3 per `Expectations.txt` after use case documentation.
+
+**Full prompt:**
+
+```
+yes please proceed step3
+```
+
+**Outcome:** Created `Corporate_Learning_System_Test_Case_Documentation.md` — test plan (7 levels/phases), 38 detailed test cases + 13 rules engine sub-tests, FR-01–FR-15, traceability matrix (Feature → UC → TC), use case mapping (26/26), edge cases, rubric self-check (Test Case Documentation — 10 marks).
+
+---
+
 ## Reusable architect prompt library
 
 Use these as copy-paste prompts. Tag format: `[JUDGE: <section> — <criterion>]`.
@@ -525,6 +557,8 @@ From `Corporate_Learning_System_problem_statement.md`:
 | Date | Change |
 |------|--------|
 | 2026-06-02 | Initial log: PROMPT-001 + reusable library (TPL A–L) |
+| 2026-06-02 | PROMPT-002: Use case documentation deliverable |
+| 2026-06-02 | PROMPT-003: Test case documentation deliverable |
 
 ---
 
