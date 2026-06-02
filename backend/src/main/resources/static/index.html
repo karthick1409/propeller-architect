@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Corporate Learning Tracker — POC Dashboard</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --accent:#38bdf8; --warn:#fbbf24; --danger:#f87171; }
+    * { box-sizing:border-box; }
+    body { font-family:Segoe UI,system-ui,sans-serif; margin:0; background:var(--bg); color:var(--text); }
+    header { padding:1.5rem 2rem; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+    h1 { margin:0; font-size:1.4rem; }
+    .badge { background:#334155; padding:.25rem .6rem; border-radius:999px; font-size:.75rem; }
+    main { padding:1.5rem 2rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+    .card { background:var(--card); border-radius:12px; padding:1rem 1.25rem; border:1px solid #334155; }
+    .card h2 { margin:0 0 .75rem; font-size:1rem; color:var(--accent); }
+    .metric { font-size:2rem; font-weight:700; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; }
+    th,td { text-align:left; padding:.4rem; border-bottom:1px solid #334155; }
+    .risk-CRITICAL,.risk-HIGH { color:var(--danger); font-weight:600; }
+    .risk-MEDIUM { color:var(--warn); }
+    button { background:var(--accent); color:#0f172a; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; margin-top:.5rem; margin-right:.5rem; }
+    button.secondary { background:#475569; color:#fff; }
+    pre { background:#0f172a; padding:.75rem; border-radius:8px; overflow:auto; font-size:.75rem; max-height:200px; }
+    .full { grid-column:1/-1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Corporate Learning Tracker</h1>
+      <span class="badge">POC Dashboard — L&amp;D Operations</span>
+    </div>
+    <div>
+      <button onclick="runRisk()">Run Risk Evaluation</button>
+      <button class="secondary" onclick="loadAll()">Refresh</button>
+    </div>
+  </header>
+  <main>
+    <div class="card"><h2>Active Employees</h2><div class="metric" id="m-active">—</div></div>
+    <div class="card"><h2>At-Risk Learners</h2><div class="metric" id="m-atrisk">—</div></div>
+    <div class="card"><h2>Ingestion Errors</h2><div class="metric" id="m-errors">—</div></div>
+    <div class="card"><h2>Active Rules</h2><div class="metric" id="m-rules">—</div></div>
+    <div class="card full">
+      <h2>At-Risk Queue</h2>
+      <table><thead><tr><th>Employee</th><th>Dept</th><th>Risk</th><th>Rules</th></tr></thead>
+      <tbody id="at-risk-body"></tbody></table>
+    </div>
+    <div class="card full">
+      <h2>Employee Profiles</h2>
+      <table><thead><tr><th>ID</th><th>Name</th><th>Att %</th><th>Latest Score %</th><th>Low Streak</th></tr></thead>
+      <tbody id="profiles-body"></tbody></table>
+    </div>
+    <div class="card full">
+      <h2>Interventions</h2>
+      <table><thead><tr><th>Employee</th><th>Type</th><th>Status</th><th>Assignee</th></tr></thead>
+      <tbody id="interventions-body"></tbody></table>
+    </div>
+  </main>
+  <script>
+    const API = '';
+    async function j(url, opts) {
+      const r = await fetch(API + url, opts);
+      if (!r.ok) throw new Error(await r.text());
+      return r.headers.get('content-type')?.includes('json') ? r.json() : r.text();
+    }
+    async function loadAll() {
+      const dash = await j('/api/v1/dashboard/lnd');
+      document.getElementById('m-active').textContent = dash.activeEmployees;
+      document.getElementById('m-atrisk').textContent = dash.atRiskCount;
+      document.getElementById('m-errors').textContent = dash.ingestionErrors;
+      document.getElementById('m-rules').textContent = dash.activeRules;
+      const atRisk = await j('/api/v1/risk/at-risk');
+      document.getElementById('at-risk-body').innerHTML = atRisk.map(r =>
+        `<tr><td>${r.fullName} (${r.employeeNumber})</td><td>${r.department||''}</td>
+         <td class="risk-${r.riskLevel}">${r.riskLevel}</td><td>${r.ruleIds||''}</td></tr>`).join('') || '<tr><td colspan="4">No at-risk employees</td></tr>';
+      const profiles = await j('/api/v1/profiles');
+      document.getElementById('profiles-body').innerHTML = profiles.map(p =>
+        `<tr><td>${p.employeeNumber}</td><td>${p.fullName}</td><td>${p.attendancePctMandatory??'—'}</td>
+         <td>${p.latestAssessmentPct??'—'}</td><td>${p.consecutiveLowScores??0}</td></tr>`).join('');
+      const ints = await j('/api/v1/interventions');
+      document.getElementById('interventions-body').innerHTML = ints.map(i =>
+        `<tr><td>${i.fullName}</td><td>${i.type}</td><td>${i.status}</td><td>${i.assignee||''}</td></tr>`).join('') || '<tr><td colspan="4">No interventions yet</td></tr>';
+    }
+    async function runRisk() {
+      await j('/api/v1/risk/evaluate', { method: 'POST' });
+      await loadAll();
+    }
+    loadAll().catch(e => alert('Failed to load dashboard: ' + e.message));
+  </script>
+</body>
+</html>

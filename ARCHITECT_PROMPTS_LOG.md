@@ -95,6 +95,38 @@ yes, please proceed High level architecture
 
 ---
 
+### PROMPT-005 — 2026-06-02 — POC implementation (Cursor)
+
+**Source:** User (Architect)  
+**Tool:** Cursor Agent  
+**Intent:** Proceed to Step 5 per `Expectations.txt` — working prototype.
+
+**Full prompt:**
+
+```
+yes
+```
+
+**Outcome:** Implemented Spring Boot POC in `backend/` — ingestion APIs, profile aggregation, 5 JSON risk rules, risk evaluator, at-risk queue, interventions, compliance report/CSV export, L&D dashboard (`static/index.html`), Flyway schema, demo seeder, Docker Compose, unit/integration tests. Docs: `README.md`, `Corporate_Learning_System_POC_Documentation.md`. Fixed `RiskLevel` enum ordering bug for classification.
+
+---
+
+### PROMPT-006 — 2026-06-02 — Presentation guide (Cursor)
+
+**Source:** User (Architect)  
+**Tool:** Cursor Agent  
+**Intent:** Proceed to Step 6 per `Expectations.txt` — presentation.
+
+**Full prompt:**
+
+```
+yes
+```
+
+**Outcome:** Created `Corporate_Learning_System_Presentation.md` — 15-slide deck with speaker notes, 3-min demo script, architecture talking points, future scope, 10 Q&As, team/presenter assignments, pre-demo checklist, rubric self-check (Presentation — 10 marks).
+
+---
+
 ## Reusable architect prompt library
 
 Use these as copy-paste prompts. Tag format: `[JUDGE: <section> — <criterion>]`.
@@ -576,6 +608,8 @@ From `Corporate_Learning_System_problem_statement.md`:
 | 2026-06-02 | PROMPT-002: Use case documentation deliverable |
 | 2026-06-02 | PROMPT-003: Test case documentation deliverable |
 | 2026-06-02 | PROMPT-004: High level architecture deliverable |
+| 2026-06-02 | PROMPT-005: POC implementation + documentation |
+| 2026-06-02 | PROMPT-006: Presentation guide deliverable |
 
 ---
 
