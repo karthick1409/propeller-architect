@@ -99,6 +99,7 @@ The POC implements the [High Level Architecture](Corporate_Learning_System_High_
 | 3 | `Corporate_Learning_System_Test_Case_Documentation.md` |
 | 4 | `Corporate_Learning_System_High_Level_Architecture.md` |
 | 5 | `Corporate_Learning_System_POC_Documentation.md` |
+| — | `POC_DEPLOYMENT_REFERENCE.md` (judges: build, run, verify, demo) |
 | 6 | `Corporate_Learning_System_Presentation.md` |
 
 ## Code repository
