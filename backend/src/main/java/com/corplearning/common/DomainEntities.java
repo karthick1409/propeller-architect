@@ -267,12 +267,15 @@ class IngestionError {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @Column(name = "source_type", nullable = false) private String sourceType;
     @Column(name = "error_message", nullable = false) private String errorMessage;
+    @Column(name = "created_at", nullable = false) private Instant createdAt = Instant.now();
     @Column(nullable = false) private boolean resolved;
     public Long getId() { return id; }
     public String getSourceType() { return sourceType; }
     public String getErrorMessage() { return errorMessage; }
+    public Instant getCreatedAt() { return createdAt; }
     public boolean isResolved() { return resolved; }
     public void setResolved(boolean resolved) { this.resolved = resolved; }
     public void setSourceType(String sourceType) { this.sourceType = sourceType; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

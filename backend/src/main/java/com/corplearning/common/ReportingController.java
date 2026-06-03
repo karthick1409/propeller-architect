@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,6 +23,11 @@ public class ReportingController {
     @GetMapping("/dashboard/lnd")
     public Map<String, Object> dashboard() {
         return reportingService.dashboardLnd();
+    }
+
+    @GetMapping("/dashboard/ingestion-errors")
+    public List<Map<String, Object>> ingestionErrors() {
+        return reportingService.listIngestionErrors();
     }
 
     @PostMapping("/reports/compliance")

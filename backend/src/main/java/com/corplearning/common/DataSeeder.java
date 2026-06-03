@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -20,9 +21,11 @@ public class DataSeeder {
                            TrainingAttendanceRepository attendance,
                            AssessmentScoreRepository assessments,
                            CompetencyMilestoneRepository milestones,
+                           IngestionErrorRepository ingestionErrors,
                            RiskRuleService ruleService,
                            ProfileService profileService,
-                           RiskEvaluationService riskEvaluation) {
+                           RiskEvaluationService riskEvaluation,
+                           InterventionService interventionService) {
         return args -> {
             if (employees.count() > 0) return;
 
@@ -66,7 +69,36 @@ public class DataSeeder {
 
             Arrays.asList(e1, e2, e3, e4, e5).forEach(e -> profileService.refreshProfile(e.getId()));
             riskEvaluation.evaluateAll();
+
+            seedIngestionError(ingestionErrors, "attendance", "Unknown employee: EMP-UNKNOWN-99");
+            seedIngestionError(ingestionErrors, "assessments", "Missing required field: employeeNumber");
+
+            seedInterventions(interventionService, e2, e3, e4, e5);
         };
+    }
+
+    private static void seedInterventions(InterventionService service, Employee e2, Employee e3,
+                                          Employee e4, Employee e5) {
+        service.assign(e2.getId(), "REMEDIAL_TRAINING", "Sarah Jenkins",
+                LocalDate.now().plusDays(3), null, "Mandatory attendance refresher for low attendance risk");
+        service.assign(e3.getId(), "COACHING", "Mike Thompson",
+                LocalDate.now().plusDays(1), null, "Weekly coaching for consecutive low assessment scores");
+        InterventionEntity e4Intervention = service.assign(e4.getId(), "REMEDIAL_TRAINING", "Sarah Jenkins",
+                LocalDate.now().plusDays(5), null, "Competency milestone catch-up session");
+        service.updateStatus(e4Intervention.getId(), "IN_PROGRESS", "Session scheduled with trainer");
+        InterventionEntity completed = service.assign(e5.getId(), "MENTORING", "Alex Morgan",
+                LocalDate.now().minusDays(14), null, "Boundary-case attendance mentoring");
+        service.recordOutcome(completed.getId(), "ATTENDANCE_IMPROVED",
+                "Employee attended all sessions; attendance back above threshold");
+    }
+
+    private static void seedIngestionError(IngestionErrorRepository repo, String source, String message) {
+        IngestionError err = new IngestionError();
+        err.setSourceType(source);
+        err.setErrorMessage(message);
+        err.setResolved(false);
+        err.setCreatedAt(Instant.now());
+        repo.save(err);
     }
 
     private static Competency comp(CompetencyRepository repo, String code, String name) {

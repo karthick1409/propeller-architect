@@ -72,4 +72,5 @@ interface ComplianceReportRunRepository extends JpaRepository<ComplianceReportRu
 @Repository
 interface IngestionErrorRepository extends JpaRepository<IngestionError, Long> {
     long countByResolvedFalse();
+    List<IngestionError> findByResolvedFalseOrderByIdDesc();
 }

@@ -56,6 +56,20 @@ public class ReportingService {
         return d;
     }
 
+    public List<Map<String, Object>> listIngestionErrors() {
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (IngestionError err : errorRepository.findByResolvedFalseOrderByIdDesc()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", err.getId());
+            row.put("sourceType", err.getSourceType());
+            row.put("errorMessage", err.getErrorMessage());
+            row.put("createdAt", err.getCreatedAt());
+            row.put("resolved", err.isResolved());
+            rows.add(row);
+        }
+        return rows;
+    }
+
     public ComplianceReportRun generateReport(LocalDate start, LocalDate end, String department) {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("periodStart", start);

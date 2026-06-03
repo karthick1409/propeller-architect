@@ -5,48 +5,83 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Corporate Learning Tracker — POC Dashboard</title>
   <style>
-    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --accent:#38bdf8; --warn:#fbbf24; --danger:#f87171; }
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --accent:#38bdf8; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80; }
     * { box-sizing:border-box; }
     body { font-family:Segoe UI,system-ui,sans-serif; margin:0; background:var(--bg); color:var(--text); }
-    header { padding:1.5rem 2rem; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+    header { padding:1.5rem 2rem; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
     h1 { margin:0; font-size:1.4rem; }
     .badge { background:#334155; padding:.25rem .6rem; border-radius:999px; font-size:.75rem; }
+    #status { width:100%; font-size:.85rem; min-height:1.25rem; margin-top:.5rem; }
+    #status.error { color:var(--danger); }
+    #status.ok { color:var(--ok); }
     main { padding:1.5rem 2rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
     .card { background:var(--card); border-radius:12px; padding:1rem 1.25rem; border:1px solid #334155; }
+    .card.metric-card { cursor:pointer; transition:border-color .15s, transform .15s; }
+    .card.metric-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+    .card.metric-card:focus { outline:2px solid var(--accent); outline-offset:2px; }
+    .card.metric-card .card-hint { font-size:.7rem; color:#64748b; margin-top:.35rem; }
+    .card.highlight { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
     .card h2 { margin:0 0 .75rem; font-size:1rem; color:var(--accent); }
     .metric { font-size:2rem; font-weight:700; }
     table { width:100%; border-collapse:collapse; font-size:.85rem; }
     th,td { text-align:left; padding:.4rem; border-bottom:1px solid #334155; }
     .risk-CRITICAL,.risk-HIGH { color:var(--danger); font-weight:600; }
     .risk-MEDIUM { color:var(--warn); }
-    button { background:var(--accent); color:#0f172a; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; margin-top:.5rem; margin-right:.5rem; }
+    button { background:var(--accent); color:#0f172a; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
     button.secondary { background:#475569; color:#fff; }
-    pre { background:#0f172a; padding:.75rem; border-radius:8px; overflow:auto; font-size:.75rem; max-height:200px; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; }
     .full { grid-column:1/-1; }
+    .hint { font-size:.75rem; color:#94a3b8; margin-top:.25rem; }
   </style>
 </head>
 <body>
   <header>
-    <div>
+    <div style="flex:1">
       <h1>Corporate Learning Tracker</h1>
       <span class="badge">POC Dashboard — L&amp;D Operations</span>
+      <div id="status" class="hint">Loading…</div>
+      <div class="hint">Open via <strong>http://localhost:8080</strong> (not as a local file).</div>
     </div>
-    <div>
-      <button onclick="runRisk()">Run Risk Evaluation</button>
-      <button class="secondary" onclick="loadAll()">Refresh</button>
+    <div class="actions">
+      <button type="button" id="btn-run-risk">Run Risk Evaluation</button>
+      <button type="button" id="btn-refresh" class="secondary">Refresh</button>
     </div>
   </header>
   <main>
-    <div class="card"><h2>Active Employees</h2><div class="metric" id="m-active">—</div></div>
-    <div class="card"><h2>At-Risk Learners</h2><div class="metric" id="m-atrisk">—</div></div>
-    <div class="card"><h2>Ingestion Errors</h2><div class="metric" id="m-errors">—</div></div>
-    <div class="card"><h2>Active Rules</h2><div class="metric" id="m-rules">—</div></div>
-    <div class="card full">
+    <div class="card metric-card" id="card-active" tabindex="0" role="button" aria-label="View employee profiles">
+      <h2>Active Employees</h2><div class="metric" id="m-active">—</div>
+      <div class="card-hint">Click to view profiles ↓</div>
+    </div>
+    <div class="card metric-card" id="card-atrisk" tabindex="0" role="button" aria-label="View at-risk queue">
+      <h2>At-Risk Learners</h2><div class="metric" id="m-atrisk">—</div>
+      <div class="card-hint">Click to view at-risk queue ↓</div>
+    </div>
+    <div class="card metric-card" id="card-errors" tabindex="0" role="button" aria-label="View ingestion error info">
+      <h2>Ingestion Errors</h2><div class="metric" id="m-errors">—</div>
+      <div class="card-hint">Click to view error queue ↓</div>
+    </div>
+    <div class="card metric-card" id="card-rules" tabindex="0" role="button" aria-label="View active rules">
+      <h2>Active Rules</h2><div class="metric" id="m-rules">—</div>
+      <div class="card-hint">Click to view rules ↓</div>
+    </div>
+    <div class="card full" id="section-rules" style="display:none">
+      <h2>Active Risk Rules</h2>
+      <table><thead><tr><th>Rule ID</th><th>Name</th><th>Severity</th><th>Status</th></tr></thead>
+      <tbody id="rules-body"></tbody></table>
+    </div>
+    <div class="card full" id="section-ingestion-errors" style="display:none">
+      <h2>Ingestion Error Queue</h2>
+      <table><thead><tr><th>ID</th><th>Source</th><th>Error</th><th>Created</th><th>Status</th></tr></thead>
+      <tbody id="errors-body"></tbody></table>
+      <p class="hint">Unresolved errors block profile updates until reconciled (UC-INGEST-005).</p>
+    </div>
+    <div class="card full" id="section-at-risk">
       <h2>At-Risk Queue</h2>
       <table><thead><tr><th>Employee</th><th>Dept</th><th>Risk</th><th>Rules</th></tr></thead>
       <tbody id="at-risk-body"></tbody></table>
     </div>
-    <div class="card full">
+    <div class="card full" id="section-profiles">
       <h2>Employee Profiles</h2>
       <table><thead><tr><th>ID</th><th>Name</th><th>Att %</th><th>Latest Score %</th><th>Low Streak</th></tr></thead>
       <tbody id="profiles-body"></tbody></table>
@@ -58,35 +93,204 @@
     </div>
   </main>
   <script>
-    const API = '';
-    async function j(url, opts) {
-      const r = await fetch(API + url, opts);
-      if (!r.ok) throw new Error(await r.text());
-      return r.headers.get('content-type')?.includes('json') ? r.json() : r.text();
-    }
-    async function loadAll() {
-      const dash = await j('/api/v1/dashboard/lnd');
-      document.getElementById('m-active').textContent = dash.activeEmployees;
-      document.getElementById('m-atrisk').textContent = dash.atRiskCount;
-      document.getElementById('m-errors').textContent = dash.ingestionErrors;
-      document.getElementById('m-rules').textContent = dash.activeRules;
-      const atRisk = await j('/api/v1/risk/at-risk');
-      document.getElementById('at-risk-body').innerHTML = atRisk.map(r =>
-        `<tr><td>${r.fullName} (${r.employeeNumber})</td><td>${r.department||''}</td>
-         <td class="risk-${r.riskLevel}">${r.riskLevel}</td><td>${r.ruleIds||''}</td></tr>`).join('') || '<tr><td colspan="4">No at-risk employees</td></tr>';
-      const profiles = await j('/api/v1/profiles');
-      document.getElementById('profiles-body').innerHTML = profiles.map(p =>
-        `<tr><td>${p.employeeNumber}</td><td>${p.fullName}</td><td>${p.attendancePctMandatory??'—'}</td>
-         <td>${p.latestAssessmentPct??'—'}</td><td>${p.consecutiveLowScores??0}</td></tr>`).join('');
-      const ints = await j('/api/v1/interventions');
-      document.getElementById('interventions-body').innerHTML = ints.map(i =>
-        `<tr><td>${i.fullName}</td><td>${i.type}</td><td>${i.status}</td><td>${i.assignee||''}</td></tr>`).join('') || '<tr><td colspan="4">No interventions yet</td></tr>';
-    }
-    async function runRisk() {
-      await j('/api/v1/risk/evaluate', { method: 'POST' });
-      await loadAll();
-    }
-    loadAll().catch(e => alert('Failed to load dashboard: ' + e.message));
+    (function () {
+      'use strict';
+
+      if (window.location.protocol === 'file:') {
+        document.getElementById('status').className = 'error';
+        document.getElementById('status').textContent =
+          'Dashboard opened as a file. Start the app and open http://localhost:8080 instead.';
+        return;
+      }
+
+      var btnRun = document.getElementById('btn-run-risk');
+      var btnRefresh = document.getElementById('btn-refresh');
+      var statusEl = document.getElementById('status');
+
+      function setStatus(msg, isError) {
+        statusEl.textContent = msg;
+        statusEl.className = isError ? 'error' : 'ok';
+      }
+
+      function setBusy(busy) {
+        btnRun.disabled = busy;
+        btnRefresh.disabled = busy;
+      }
+
+      function dashVal(v) {
+        return v === null || v === undefined ? '—' : v;
+      }
+
+      function apiJson(url, opts) {
+        opts = opts || {};
+        opts.headers = opts.headers || {};
+        if (opts.body && !opts.headers['Content-Type']) {
+          opts.headers['Content-Type'] = 'application/json';
+        }
+        return fetch(url, opts).then(function (r) {
+          if (!r.ok) {
+            return r.text().then(function (t) {
+              throw new Error('HTTP ' + r.status + ': ' + t);
+            });
+          }
+          var ct = r.headers.get('content-type') || '';
+          if (ct.indexOf('json') >= 0) {
+            return r.json();
+          }
+          return r.text();
+        });
+      }
+
+      function loadAll() {
+        setBusy(true);
+        setStatus('Refreshing dashboard…', false);
+
+        return apiJson('/api/v1/dashboard/lnd')
+          .then(function (dash) {
+            document.getElementById('m-active').textContent = dash.activeEmployees;
+            document.getElementById('m-atrisk').textContent = dash.atRiskCount;
+            document.getElementById('m-errors').textContent = dash.ingestionErrors;
+            document.getElementById('m-rules').textContent = dash.activeRules;
+            return apiJson('/api/v1/risk/at-risk');
+          })
+          .then(function (atRisk) {
+            var rows = atRisk.map(function (r) {
+              return '<tr><td>' + r.fullName + ' (' + r.employeeNumber + ')</td><td>' +
+                (r.department || '') + '</td><td class="risk-' + r.riskLevel + '">' +
+                r.riskLevel + '</td><td>' + (r.ruleIds || '') + '</td></tr>';
+            }).join('');
+            document.getElementById('at-risk-body').innerHTML = rows ||
+              '<tr><td colspan="4">No at-risk employees</td></tr>';
+            return apiJson('/api/v1/profiles');
+          })
+          .then(function (profiles) {
+            document.getElementById('profiles-body').innerHTML = profiles.map(function (p) {
+              return '<tr><td>' + p.employeeNumber + '</td><td>' + p.fullName + '</td><td>' +
+                dashVal(p.attendancePctMandatory) + '</td><td>' +
+                dashVal(p.latestAssessmentPct) + '</td><td>' +
+                dashVal(p.consecutiveLowScores) + '</td></tr>';
+            }).join('');
+            return apiJson('/api/v1/interventions');
+          })
+          .then(function (ints) {
+            document.getElementById('interventions-body').innerHTML = ints.map(function (i) {
+              return '<tr><td>' + i.fullName + '</td><td>' + i.type + '</td><td>' +
+                i.status + '</td><td>' + (i.assignee || '') + '</td></tr>';
+            }).join('') || '<tr><td colspan="4">No interventions yet</td></tr>';
+            setStatus('Dashboard updated at ' + new Date().toLocaleTimeString(), false);
+          })
+          .catch(function (e) {
+            setStatus('Failed to load dashboard: ' + e.message, true);
+          })
+          .finally(function () {
+            setBusy(false);
+          });
+      }
+
+      function runRisk() {
+        setBusy(true);
+        setStatus('Running risk evaluation…', false);
+
+        apiJson('/api/v1/risk/evaluate', { method: 'POST' })
+          .then(function (result) {
+            setStatus('Risk run complete — evaluated ' + result.employeesEvaluated +
+              ', at-risk ' + result.atRiskCount, false);
+            return loadAll();
+          })
+          .catch(function (e) {
+            setStatus('Risk evaluation failed: ' + e.message, true);
+            setBusy(false);
+          });
+      }
+
+      btnRun.addEventListener('click', runRisk);
+      btnRefresh.addEventListener('click', loadAll);
+
+      function scrollToSection(id, cardId) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        document.querySelectorAll('.card.highlight').forEach(function (c) {
+          c.classList.remove('highlight');
+        });
+        if (cardId) {
+          var card = document.getElementById(cardId);
+          if (card) card.classList.add('highlight');
+        }
+        if (id === 'section-rules' || id === 'section-ingestion-errors') {
+          el.style.display = 'block';
+        }
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      function loadErrorsPanel() {
+        return apiJson('/api/v1/dashboard/ingestion-errors').then(function (errors) {
+          document.getElementById('errors-body').innerHTML = errors.map(function (e) {
+            var created = e.createdAt ? String(e.createdAt).replace('T', ' ').substring(0, 19) : '—';
+            return '<tr><td>' + e.id + '</td><td>' + e.sourceType +
+              '</td><td>' + e.errorMessage + '</td><td>' + created +
+              '</td><td>' + (e.resolved ? 'Resolved' : 'Open') + '</td></tr>';
+          }).join('') || '<tr><td colspan="5">No unresolved ingestion errors</td></tr>';
+          return errors;
+        });
+      }
+
+      function loadRulesPanel() {
+        return apiJson('/api/v1/rules').then(function (rules) {
+          var active = rules.filter(function (r) { return r.status === 'ACTIVE'; });
+          document.getElementById('rules-body').innerHTML = active.map(function (r) {
+            return '<tr><td>' + r.ruleId + ' v' + r.version + '</td><td>' + r.name +
+              '</td><td class="risk-' + r.severity + '">' + r.severity + '</td><td>' +
+              r.status + '</td></tr>';
+          }).join('') || '<tr><td colspan="4">No active rules</td></tr>';
+        });
+      }
+
+      document.getElementById('card-active').addEventListener('click', function () {
+        scrollToSection('section-profiles', 'card-active');
+        setStatus('Showing all employee learning profiles', false);
+      });
+      document.getElementById('card-active').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+      });
+
+      document.getElementById('card-atrisk').addEventListener('click', function () {
+        scrollToSection('section-at-risk', 'card-atrisk');
+        setStatus('Showing at-risk learner queue', false);
+      });
+      document.getElementById('card-atrisk').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+      });
+
+      document.getElementById('card-errors').addEventListener('click', function () {
+        loadErrorsPanel().then(function (errors) {
+          scrollToSection('section-ingestion-errors', 'card-errors');
+          if (errors.length === 0) {
+            setStatus('No unresolved ingestion errors — all records validated successfully.', false);
+          } else {
+            setStatus('Showing ingestion error queue (' + errors.length + ' unresolved)', true);
+          }
+        }).catch(function (e) {
+          setStatus('Failed to load ingestion errors: ' + e.message, true);
+        });
+      });
+      document.getElementById('card-errors').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+      });
+
+      document.getElementById('card-rules').addEventListener('click', function () {
+        loadRulesPanel().then(function () {
+          scrollToSection('section-rules', 'card-rules');
+          setStatus('Showing active risk rules (JSON-configurable)', false);
+        }).catch(function (e) {
+          setStatus('Failed to load rules: ' + e.message, true);
+        });
+      });
+      document.getElementById('card-rules').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
+      });
+
+      loadAll();
+    })();
   </script>
 </body>
 </html>
