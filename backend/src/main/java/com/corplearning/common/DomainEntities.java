@@ -279,3 +279,24 @@ class IngestionError {
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
+
+@Entity @Table(name = "audit_log")
+class AuditLogEntry {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @Column(nullable = false) private String action;
+    @Column(name = "entity_type") private String entityType;
+    @Column(name = "entity_id") private String entityId;
+    @Column(name = "details_json") private String detailsJson;
+    @Column(name = "created_at", nullable = false) private Instant createdAt = Instant.now();
+    public Long getId() { return id; }
+    public String getAction() { return action; }
+    public void setAction(String action) { this.action = action; }
+    public String getEntityType() { return entityType; }
+    public void setEntityType(String entityType) { this.entityType = entityType; }
+    public String getEntityId() { return entityId; }
+    public void setEntityId(String entityId) { this.entityId = entityId; }
+    public String getDetailsJson() { return detailsJson; }
+    public void setDetailsJson(String detailsJson) { this.detailsJson = detailsJson; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+}

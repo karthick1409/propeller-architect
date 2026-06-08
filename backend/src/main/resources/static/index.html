@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <title>Corporate Learning Tracker — POC Dashboard</title>
   <style>
     :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --accent:#38bdf8; --warn:#fbbf24; --danger:#f87171; --ok:#4ade80; }
@@ -30,9 +31,44 @@
     button { background:var(--accent); color:#0f172a; border:none; padding:.5rem 1rem; border-radius:8px; cursor:pointer; font-weight:600; }
     button:disabled { opacity:.6; cursor:not-allowed; }
     button.secondary { background:#475569; color:#fff; }
-    .actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+    .role-bar {
+      width:100%;
+      display:flex;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:.75rem 1rem;
+      padding:.85rem 2rem;
+      background:#172554;
+      border-bottom:1px solid #334155;
+    }
+    .role-bar strong { color:var(--accent); font-size:.9rem; }
+    .role-bar select {
+      background:#0f172a;
+      border:2px solid var(--accent);
+      color:var(--text);
+      padding:.45rem .75rem;
+      border-radius:8px;
+      font-size:.9rem;
+      min-width:220px;
+      cursor:pointer;
+    }
+    .role-badge {
+      background:var(--accent);
+      color:#0f172a;
+      padding:.3rem .75rem;
+      border-radius:999px;
+      font-size:.8rem;
+      font-weight:700;
+    }
+    .role-hint { font-size:.8rem; color:#cbd5e1; max-width:42rem; }
+    .role-capabilities { font-size:.75rem; color:#94a3b8; }
     .full { grid-column:1/-1; }
     .hint { font-size:.75rem; color:#94a3b8; margin-top:.25rem; }
+    .form-row { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:.75rem; }
+    .form-row label { font-size:.8rem; color:#94a3b8; }
+    .form-row input, .form-row select { background:#0f172a; border:1px solid #475569; color:var(--text); padding:.35rem .5rem; border-radius:6px; }
+    pre.report-preview { background:#0f172a; padding:.75rem; border-radius:8px; font-size:.75rem; overflow:auto; max-height:200px; margin:0; }
   </style>
 </head>
 <body>
@@ -45,9 +81,24 @@
     </div>
     <div class="actions">
       <button type="button" id="btn-run-risk">Run Risk Evaluation</button>
+      <button type="button" id="btn-report" class="secondary">Generate Corporate Report</button>
       <button type="button" id="btn-refresh" class="secondary">Refresh</button>
     </div>
   </header>
+  <div class="role-bar" id="role-bar">
+    <strong>Demo role</strong>
+    <select id="user-role" aria-label="Select demo role">
+      <option value="LND_ADMIN">L&amp;D Administrator</option>
+      <option value="COMPLIANCE_OFFICER">Compliance Officer</option>
+      <option value="TRAINER">Trainer</option>
+      <option value="LINE_MANAGER">Line Manager</option>
+      <option value="EMPLOYEE">Employee</option>
+      <option value="INTEGRATOR">System Integrator</option>
+    </select>
+    <span class="role-badge" id="role-badge">L&amp;D Administrator</span>
+    <span class="role-hint">No login required — pick a role to simulate RBAC for this POC demo.</span>
+    <span class="role-capabilities" id="role-capabilities"></span>
+  </div>
   <main>
     <div class="card metric-card" id="card-active" tabindex="0" role="button" aria-label="View employee profiles">
       <h2>Active Employees</h2><div class="metric" id="m-active">—</div>
@@ -91,6 +142,34 @@
       <table><thead><tr><th>Employee</th><th>Type</th><th>Status</th><th>Assignee</th></tr></thead>
       <tbody id="interventions-body"></tbody></table>
     </div>
+    <div class="card full" id="section-corporate-report">
+      <h2>Corporate-Ready Compliance Reporting</h2>
+      <p class="hint">Audit-ready reports with rule versions, intervention trails, and export logging (UC-REPORT-001–003). Requires <strong>Compliance Officer</strong> role — use the demo role bar above.</p>
+      <div class="form-row">
+        <label>Period start <input type="date" id="report-start"/></label>
+        <label>Period end <input type="date" id="report-end"/></label>
+        <label>Department
+          <select id="report-dept">
+            <option value="">All departments</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Sales">Sales</option>
+            <option value="Operations">Operations</option>
+          </select>
+        </label>
+        <button type="button" id="btn-generate-report">Generate Report</button>
+        <button type="button" id="btn-export-report" class="secondary" disabled>Export CSV</button>
+        <button type="button" id="btn-export-pdf" class="secondary" disabled>Export PDF</button>
+      </div>
+      <pre class="report-preview" id="report-preview">No report generated yet.</pre>
+      <table><thead><tr><th>Run ID</th><th>Period</th><th>Dept</th><th>At-risk</th><th>Generated</th></tr></thead>
+      <tbody id="reports-history-body"></tbody></table>
+    </div>
+    <div class="card full" id="section-audit">
+      <h2>Risk Decision Audit Trail</h2>
+      <p class="hint">Reproducibility view: rule version, evidence metrics, and current classification (UC-REPORT-003).</p>
+      <table><thead><tr><th>Employee</th><th>Rule</th><th>Ver</th><th>Severity</th><th>Evaluated</th><th>Current risk</th></tr></thead>
+      <tbody id="audit-body"></tbody></table>
+    </div>
   </main>
   <script>
     (function () {
@@ -105,7 +184,56 @@
 
       var btnRun = document.getElementById('btn-run-risk');
       var btnRefresh = document.getElementById('btn-refresh');
+      var btnReport = document.getElementById('btn-report');
+      var btnGenerateReport = document.getElementById('btn-generate-report');
+      var btnExportReport = document.getElementById('btn-export-report');
+      var btnExportPdf = document.getElementById('btn-export-pdf');
+      var roleSelect = document.getElementById('user-role');
+      var roleBadge = document.getElementById('role-badge');
+      var roleCapabilities = document.getElementById('role-capabilities');
       var statusEl = document.getElementById('status');
+      var lastReportId = null;
+      var currentRole = localStorage.getItem('userRole') || 'LND_ADMIN';
+      roleSelect.value = currentRole;
+
+      var roleLabels = {
+        LND_ADMIN: 'L&D Administrator',
+        COMPLIANCE_OFFICER: 'Compliance Officer',
+        TRAINER: 'Trainer',
+        LINE_MANAGER: 'Line Manager',
+        EMPLOYEE: 'Employee',
+        INTEGRATOR: 'System Integrator'
+      };
+
+      function updateRoleUi() {
+        roleBadge.textContent = roleLabels[currentRole] || currentRole;
+        roleSelect.value = currentRole;
+        updateReportButtons();
+        return apiJson('/api/v1/auth/me').then(function (me) {
+          var caps = [];
+          if (me.canConfigureRules) caps.push('configure rules');
+          if (me.canGenerateReports) caps.push('generate reports');
+          if (me.canExportReports) caps.push('export reports');
+          if (me.canViewAuditTrail) caps.push('view audit trail');
+          roleCapabilities.textContent = caps.length
+            ? 'Permissions: ' + caps.join(', ')
+            : 'Permissions: read-only demo access';
+          if (currentRole === 'COMPLIANCE_OFFICER') {
+            roleBadge.style.background = '#4ade80';
+          } else if (currentRole === 'TRAINER') {
+            roleBadge.style.background = '#fbbf24';
+          } else {
+            roleBadge.style.background = 'var(--accent)';
+          }
+        }).catch(function () {
+          roleCapabilities.textContent = 'Acting as ' + (roleLabels[currentRole] || currentRole);
+        });
+      }
+
+      var today = new Date();
+      var qStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+      document.getElementById('report-start').value = qStart.toISOString().slice(0, 10);
+      document.getElementById('report-end').value = today.toISOString().slice(0, 10);
 
       function setStatus(msg, isError) {
         statusEl.textContent = msg;
@@ -115,15 +243,30 @@
       function setBusy(busy) {
         btnRun.disabled = busy;
         btnRefresh.disabled = busy;
+        btnReport.disabled = busy;
+        btnGenerateReport.disabled = busy;
       }
 
       function dashVal(v) {
         return v === null || v === undefined ? '—' : v;
       }
 
+      function roleHeaders() {
+        return { 'X-User-Role': currentRole };
+      }
+
+      function updateReportButtons() {
+        var canReport = currentRole === 'COMPLIANCE_OFFICER';
+        btnGenerateReport.disabled = !canReport;
+        btnReport.disabled = !canReport;
+        var canExport = canReport && lastReportId;
+        btnExportReport.disabled = !canExport;
+        btnExportPdf.disabled = !canExport;
+      }
+
       function apiJson(url, opts) {
         opts = opts || {};
-        opts.headers = opts.headers || {};
+        opts.headers = Object.assign({}, roleHeaders(), opts.headers || {});
         if (opts.body && !opts.headers['Content-Type']) {
           opts.headers['Content-Type'] = 'application/json';
         }
@@ -177,7 +320,11 @@
               return '<tr><td>' + i.fullName + '</td><td>' + i.type + '</td><td>' +
                 i.status + '</td><td>' + (i.assignee || '') + '</td></tr>';
             }).join('') || '<tr><td colspan="4">No interventions yet</td></tr>';
-            setStatus('Dashboard updated at ' + new Date().toLocaleTimeString(), false);
+            setStatus('Dashboard updated (' + (roleLabels[currentRole] || currentRole) + ') at ' +
+              new Date().toLocaleTimeString(), false);
+            return updateRoleUi().then(function () {
+              return Promise.all([loadReportsHistory(), loadAuditTrail()]);
+            });
           })
           .catch(function (e) {
             setStatus('Failed to load dashboard: ' + e.message, true);
@@ -186,6 +333,96 @@
             setBusy(false);
           });
       }
+
+      function loadReportsHistory() {
+        return apiJson('/api/v1/reports').then(function (reports) {
+          document.getElementById('reports-history-body').innerHTML = reports.map(function (r) {
+            var summary = r.summary || {};
+            var gen = r.generatedAt ? String(r.generatedAt).replace('T', ' ').substring(0, 19) : '—';
+            return '<tr><td>' + r.runId + '</td><td>' + r.periodStart + ' → ' + r.periodEnd +
+              '</td><td>' + (r.department || 'ALL') + '</td><td>' + (summary.atRisk || 0) +
+              '</td><td>' + gen + '</td></tr>';
+          }).join('') || '<tr><td colspan="5">No reports generated yet</td></tr>';
+        });
+      }
+
+      function loadAuditTrail() {
+        return apiJson('/api/v1/audit/risk-decisions').then(function (rows) {
+          document.getElementById('audit-body').innerHTML = rows.map(function (r) {
+            var evaluated = r.evaluatedAt ? String(r.evaluatedAt).replace('T', ' ').substring(0, 19) : '—';
+            return '<tr><td>' + (r.fullName || r.employeeId) + ' (' + (r.employeeNumber || '') + ')</td><td>' +
+              r.ruleId + '</td><td>' + r.ruleVersion + '</td><td class="risk-' + r.severity + '">' +
+              r.severity + '</td><td>' + evaluated + '</td><td class="risk-' + (r.currentRiskLevel || 'NONE') + '">' +
+              (r.currentRiskLevel || '—') + '</td></tr>';
+          }).join('') || '<tr><td colspan="6">Run risk evaluation to populate audit trail</td></tr>';
+        });
+      }
+
+      function generateReport() {
+        setBusy(true);
+        var body = {
+          periodStart: document.getElementById('report-start').value,
+          periodEnd: document.getElementById('report-end').value,
+          department: document.getElementById('report-dept').value || null
+        };
+        setStatus('Generating corporate compliance report…', false);
+        return apiJson('/api/v1/reports/corporate', { method: 'POST', body: JSON.stringify(body) })
+          .then(function (report) {
+            lastReportId = report.runId;
+            updateReportButtons();
+            document.getElementById('report-preview').textContent = JSON.stringify({
+              runId: report.runId,
+              reportType: report.reportType,
+              summary: report.summary,
+              interventionSummary: report.interventionSummary,
+              ruleVersions: report.ruleVersions
+            }, null, 2);
+            setStatus('Corporate report #' + report.runId + ' generated', false);
+            return loadReportsHistory();
+          })
+          .catch(function (e) {
+            setStatus('Report generation failed: ' + e.message, true);
+          })
+          .finally(function () { setBusy(false); });
+      }
+
+      function exportWithRole(format) {
+        if (!lastReportId || currentRole !== 'COMPLIANCE_OFFICER') return;
+        fetch('/api/v1/reports/' + lastReportId + '/export?format=' + format, {
+          headers: roleHeaders()
+        }).then(function (r) {
+          if (!r.ok) {
+            return r.json().then(function (e) {
+              throw new Error(e.error + ' (' + e.requiredPermission + ')');
+            });
+          }
+          return r.blob();
+        }).then(function (blob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'corporate-learning-report-' + lastReportId + '.' + format;
+          a.click();
+          setStatus('Exported report #' + lastReportId + ' as ' + format.toUpperCase(), false);
+        }).catch(function (e) {
+          setStatus('Export failed: ' + e.message, true);
+        });
+      }
+
+      function exportReport() {
+        exportWithRole('csv');
+      }
+
+      function exportPdf() {
+        exportWithRole('pdf');
+      }
+
+      roleSelect.addEventListener('change', function () {
+        currentRole = roleSelect.value;
+        localStorage.setItem('userRole', currentRole);
+        setStatus('Switched to ' + (roleLabels[currentRole] || currentRole) +
+          (currentRole === 'COMPLIANCE_OFFICER' ? ' — you can now generate and export reports.' : ''), false);
+        updateRoleUi().then(function () { return loadAll(); });
+      });
 
       function runRisk() {
         setBusy(true);
@@ -205,6 +442,14 @@
 
       btnRun.addEventListener('click', runRisk);
       btnRefresh.addEventListener('click', loadAll);
+      btnReport.addEventListener('click', function () {
+        scrollToSection('section-corporate-report', null);
+        generateReport();
+      });
+      btnGenerateReport.addEventListener('click', generateReport);
+      btnExportReport.addEventListener('click', exportReport);
+      btnExportPdf.addEventListener('click', exportPdf);
+      updateRoleUi().then(function () { return loadAll(); });
 
       function scrollToSection(id, cardId) {
         var el = document.getElementById(id);
@@ -288,8 +533,6 @@
       document.getElementById('card-rules').addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
       });
-
-      loadAll();
     })();
   </script>
 </body>

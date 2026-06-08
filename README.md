@@ -28,12 +28,26 @@ Open:
 
 | URL | Purpose |
 |-----|---------|
-| http://localhost:8080 | L&D dashboard (POC UI) |
+| http://localhost:8080 | L&D dashboard (POC UI) — use the **Demo role** bar to switch to **Compliance Officer** (no login) |
 | http://localhost:8080/swagger-ui.html | API documentation |
 | http://localhost:8080/actuator/health | Health check |
 | http://localhost:8080/h2-console | H2 DB console (JDBC: `jdbc:h2:mem:corplearning`) |
 
 Demo data (5 employees, 5 active risk rules, sample at-risk classifications) loads automatically on first startup.
+
+### External configuration
+
+By default the app also loads settings from **`C:/Users/Administrator/propeller-architect-main`** (override with env var `CORP_CONFIG_HOME`):
+
+| Location | Purpose |
+|----------|---------|
+| `{CORP_CONFIG_HOME}/config/` | Local overrides (highest priority) |
+| `{CORP_CONFIG_HOME}/backend/src/main/resources/` | Shared `application.yml`, `application-local.yml`, etc. |
+
+```powershell
+$env:CORP_CONFIG_HOME = "C:/Users/Administrator/propeller-architect-main"
+java -jar target/corporate-learning-tracker-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+```
 
 ## Quick start (Docker)
 
@@ -61,8 +75,16 @@ App: http://localhost:8080
 | GET | `/api/v1/risk/at-risk` | At-risk learner queue |
 | POST | `/api/v1/interventions` | Assign intervention |
 | GET | `/api/v1/dashboard/lnd` | L&D dashboard metrics |
-| POST | `/api/v1/reports/compliance` | Generate compliance report |
-| GET | `/api/v1/reports/{id}/export?format=csv` | Export report CSV |
+| POST | `/api/v1/reports/corporate` | Generate corporate compliance report |
+| POST | `/api/v1/reports/compliance` | Alias for corporate report |
+| GET | `/api/v1/reports` | List generated reports |
+| GET | `/api/v1/reports/{id}` | Report summary with traceability metadata |
+| GET | `/api/v1/reports/{id}/export?format=csv` | Export report CSV (audit-logged) |
+| GET | `/api/v1/reports/{id}/export?format=pdf` | Export report PDF (Compliance Officer only) |
+| GET | `/api/v1/audit/risk-decisions` | Risk decision audit trail |
+| GET | `/api/v1/auth/me` | Current role and permissions (send header `X-User-Role`) |
+
+**RBAC (POC):** Send `X-User-Role` header: `LND_ADMIN`, `COMPLIANCE_OFFICER`, `TRAINER`, `EMPLOYEE`, `LINE_MANAGER`, `INTEGRATOR`. Dashboard role selector sets this automatically. Report generate/export requires `COMPLIANCE_OFFICER`; rule configuration requires `LND_ADMIN`.
 
 ## Smoke test (curl)
 

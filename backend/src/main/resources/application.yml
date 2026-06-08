@@ -1,8 +1,13 @@
 spring:
   application:
     name: corporate-learning-tracker
+  config:
+  # External config (overrides classpath defaults). Set CORP_CONFIG_HOME to change location.
+    additional-location: >-
+      optional:file:${CORP_CONFIG_HOME:C:/Users/Administrator/propeller-architect-main}/config/,
+      optional:file:${CORP_CONFIG_HOME:C:/Users/Administrator/propeller-architect-main}/backend/src/main/resources/
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:local}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -26,6 +31,7 @@ management:
 
 corp-learning:
   ingest-api-key: ${INGEST_API_KEY:demo-ingest-key}
+  default-role: ${DEFAULT_USER_ROLE:LND_ADMIN}
 
 springdoc:
   api-docs:

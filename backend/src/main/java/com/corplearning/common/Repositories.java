@@ -64,10 +64,20 @@ interface InterventionRepository extends JpaRepository<InterventionEntity, Long>
 }
 
 @Repository
-interface InterventionOutcomeRepository extends JpaRepository<InterventionOutcomeEntity, Long> {}
+interface InterventionOutcomeRepository extends JpaRepository<InterventionOutcomeEntity, Long> {
+    Optional<InterventionOutcomeEntity> findByInterventionId(Long interventionId);
+}
 
 @Repository
-interface ComplianceReportRunRepository extends JpaRepository<ComplianceReportRun, Long> {}
+interface ComplianceReportRunRepository extends JpaRepository<ComplianceReportRun, Long> {
+    List<ComplianceReportRun> findAllByOrderByGeneratedAtDesc();
+}
+
+@Repository
+interface AuditLogRepository extends JpaRepository<AuditLogEntry, Long> {
+    List<AuditLogEntry> findByActionOrderByCreatedAtDesc(String action);
+    List<AuditLogEntry> findByEntityTypeAndEntityIdOrderByCreatedAtDesc(String entityType, String entityId);
+}
 
 @Repository
 interface IngestionErrorRepository extends JpaRepository<IngestionError, Long> {
